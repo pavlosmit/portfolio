@@ -1271,7 +1271,10 @@ function loop(ts) {
 }
 
 /* ---------------- input ---------------- */
-const KEYDIR = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right' };
+/* e.code is the physical key, so WASD/E/Q work on any keyboard layout (e.g. Greek) */
+const KEYDIR = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right' };
+const keyDir = e => KEYDIR[e.code] || KEYDIR[e.key];
+const isAct = e => e.code === 'KeyE' || e.key === ' ' || e.key === 'Enter';
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (isOpen(ui.lb)) return closeLightbox();
@@ -1287,16 +1290,17 @@ document.addEventListener('keydown', e => {
     return;
   }
   const onControl = e.target.closest && e.target.closest('button, a, input, textarea');
-  if (isOpen(ui.talk) && (e.key === 'e' || e.key === 'E' || e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); advanceTalk(); return; }
+  if (isOpen(ui.talk) && isAct(e)) { e.preventDefault(); advanceTalk(); return; }
   if (!started || uiBlocking()) return;
-  const d = KEYDIR[e.key];
+  const d = keyDir(e);
   if (d) { e.preventDefault(); path = null; autoTarget = null; marker = null; if (!keyOrder.includes(d)) keyOrder.push(d); return; }
   if (onControl && (e.key === ' ' || e.key === 'Enter')) return;
-  if (e.key === 'e' || e.key === 'E' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); interact(); }
-  else if (e.key === 'q' || e.key === 'Q') openQuick();
-  else if (e.key === 'l' || e.key === 'L' || e.key === 'm' || e.key === 'M') openQuests();
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (isAct(e)) { e.preventDefault(); interact(); }
+  else if (e.code === 'KeyQ') openQuick();
+  else if (e.code === 'KeyL' || e.code === 'KeyM') openQuests();
 });
-document.addEventListener('keyup', e => { const d = KEYDIR[e.key]; if (d) keyOrder = keyOrder.filter(k => k !== d); });
+document.addEventListener('keyup', e => { const d = keyDir(e); if (d) keyOrder = keyOrder.filter(k => k !== d); });
 window.addEventListener('blur', () => { keyOrder = []; });
 
 canvas.addEventListener('pointerdown', e => { if (e.button !== 0 && e.pointerType === 'mouse') return; canvas.focus({ preventScroll: true }); clickWorld(e.clientX, e.clientY); });
